@@ -87,24 +87,63 @@ class db_table:
             for k, v in where.items():
                 if k == 'speaker':
                     where_query_string.append(f"{k} LIKE ?")
-                    where_values.append(f"%{v}%")  # Using LIKE and wildcards for partial match
+                    where_values.append(f"%{v}%")  # Using LIKE for partial match to deal with case of multiple speakers
                 else:
                     where_query_string.append(f"{k} = ?")
                     where_values.append(v)
             query += " WHERE " + ' AND '.join(where_query_string)
         
-        result = []
+        
         # SELECT id, name FROM users [ WHERE id=42 AND name=John ]
         #
         # Note that columns are formatted into the string without using sqlite safe substitution mechanism
         # The reason is that sqlite does not provide substitution mechanism for columns parameters
         # In the context of this project, this is fine (no risk of user malicious input)
+        # for row in self.db_conn.execute(query, where_values):
+        #     result_row = {}
+        #     # convert from (val1, val2, val3) to { col1: val1, col2: val2, col3: val3 }
+        #     for i in range(0, len(columns)):
+        #         result_row[columns[i]] = row[i]
+        #     result.append(result_row)
+
+        # Add to matched_rows instead of final result because must find and add subsessions to final result
+
+        matched_rows = []
         for row in self.db_conn.execute(query, where_values):
-            result_row = {}
-            # convert from (val1, val2, val3) to { col1: val1, col2: val2, col3: val3 }
-            for i in range(0, len(columns)):
-                result_row[columns[i]] = row[i]
-            result.append(result_row)
+            result_row = {columns[i]: row[i] for i in range(len(columns))}
+            matched_rows.append(result_row)
+
+        # Find all sessions and their subsessions
+        all_rows_query = f"SELECT {columns_query_string} FROM {self.name}"
+        all_rows = list(self.db_conn.execute(all_rows_query))
+
+        sessions = {}
+        last_session_id = None
+
+        for row in all_rows:
+            row_dict = {columns[i]: row[i] for i in range(len(columns))}
+            if row_dict['session_type'] == 'session':
+                last_session_id = row_dict['id']
+                sessions[last_session_id] = [row_dict]
+            else:
+                sessions[last_session_id].append(row_dict)
+
+        result = []
+
+        # Add all matching sessions and their subsessions to final result
+        session_ids_to_include = set()
+        for matched_row in matched_rows:
+            if matched_row['session_type'] == 'session':
+                session_id = matched_row['id']
+                session_ids_to_include.add(session_id)
+            else:
+                for session_id, subsessions in sessions.items():
+                    if matched_row in subsessions:
+                        session_ids_to_include.add(session_id)
+                        break
+            
+        for session_id in session_ids_to_include:
+            result.extend(sessions.get(session_id, []))
 
         return result
 

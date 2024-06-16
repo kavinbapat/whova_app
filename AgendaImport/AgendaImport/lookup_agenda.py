@@ -32,56 +32,10 @@ agenda_table = db_table("agenda", {
 )
 
 # Select all rows that match the column name and value
+selected_rows = agenda_table.select([k for k in agenda_table.schema], {column: value})
 
-
-
-# result = []
-# session_to_subsessions = {}
-# last_session = None
-
-# for row in all_rows:
-#     if row['session_type'] == 'session':
-#         last_session = row
-#         session_to_subsessions[row['id']] = [row]
-#     elif row['session_type'] == 'subsession' and last_session:
-#         session_to_subsessions[last_session['id']].append(row)
-
-# for match in selected_rows:
-#     if match['session_type'] == 'session':
-#         result.extend(session_to_subsessions.get(match['id'], []))
-
-# for j in range(len(result)):
-#     for k in result[j]:
-#         print(result[j][k], "\t", end=" ")
-#     print("\n")
-
-selected_rows = agenda_table.select([i for i in agenda_table.schema], {column: value})
-all_rows = agenda_table.select([i for i in agenda_table.schema])
-
-# Identify sessions and their subsessions
-result = []
-last_session = None
-session_to_subsessions = {}
-
-for row in all_rows:
-    if row['session_type'] == 'session':
-        last_session = row
-        session_to_subsessions[row['id']] = [row]
-    elif row['session_type'] == 'subsession' and last_session:
-        session_to_subsessions[last_session['id']].append(row)
-
-# Include matching sessions and their subsessions
-for match in selected_rows:
-    if match['session_type'] == 'session':
-        result.extend(session_to_subsessions.get(match['id'], []))
-    elif match['session_type'] == 'subsession':
-        # Ensure to include the parent session of this subsession
-        for session_id, subsessions in session_to_subsessions.items():
-            if match in subsessions:
-                result.extend(subsessions)
-                break
-
-for j in range(len(result)):
-    for k in result[j]:
-        print(result[j][k], "\t", end=" ")
+# Format output
+for j in range(len(selected_rows)):
+    for k in selected_rows[j]:
+        print(selected_rows[j][k], "\t", end=" ")
     print()
