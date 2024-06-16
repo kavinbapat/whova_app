@@ -1,5 +1,20 @@
 import xlrd
 from db_table import db_table
+import sys
+
+# Check if correct number of command-line arguments
+n = len(sys.argv)
+if n != 2:
+    print("Must have 1 command-line argument denoting the Excel spreadsheet to be imported.")
+    sys.exit()
+
+excel_file = sys.argv[1]
+
+# Check if Excel file is passed
+arg = excel_file.split('.')
+if len(arg) != 2 or arg[1] != 'xls':
+    print("Must have Excel file as command-line argument.")
+    sys.exit()
 
 # Create the agenda table
 agenda_table = db_table("agenda", {
@@ -14,9 +29,8 @@ agenda_table = db_table("agenda", {
     "speakers": "text"
     })
 
-
 # Open the Excel workbook
-book = xlrd.open_workbook("agenda.xls")
+book = xlrd.open_workbook(excel_file)
 
 # Select the first sheet
 sheet = book.sheet_by_index(0)
