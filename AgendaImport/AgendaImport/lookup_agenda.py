@@ -84,4 +84,4 @@ for match in selected_rows:
 for j in range(len(result)):
     for k in result[j]:
         print(result[j][k], "\t", end=" ")
-    print("\n")
+    print()
