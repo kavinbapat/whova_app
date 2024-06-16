@@ -81,10 +81,17 @@ class db_table:
         #query                = "SELECT %s FROM %s" % (columns_query_string, self.name)
         query                = f"SELECT {columns_query_string} FROM {self.name}" # update query string to f string for it to work properly
         # build where query string
+        where_values = []
         if where:
-            #where_query_string = [ "%s = '%s'" % (k,v) for k,v in where.iteritems() ]
-            where_query_string = [f"{k} = ?" for k in where] # update to use f string for where_query_string for it to work properly
-            query             += " WHERE " + ' AND '.join(where_query_string)
+            where_query_string = []
+            for k, v in where.items():
+                if k == 'speaker':
+                    where_query_string.append(f"{k} LIKE ?")
+                    where_values.append(f"%{v}%")  # Using LIKE and wildcards for partial match
+                else:
+                    where_query_string.append(f"{k} = ?")
+                    where_values.append(v)
+            query += " WHERE " + ' AND '.join(where_query_string)
         
         result = []
         # SELECT id, name FROM users [ WHERE id=42 AND name=John ]
@@ -92,7 +99,7 @@ class db_table:
         # Note that columns are formatted into the string without using sqlite safe substitution mechanism
         # The reason is that sqlite does not provide substitution mechanism for columns parameters
         # In the context of this project, this is fine (no risk of user malicious input)
-        for row in self.db_conn.execute(query):
+        for row in self.db_conn.execute(query, where_values):
             result_row = {}
             # convert from (val1, val2, val3) to { col1: val1, col2: val2, col3: val3 }
             for i in range(0, len(columns)):
