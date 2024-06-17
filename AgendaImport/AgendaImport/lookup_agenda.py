@@ -1,12 +1,6 @@
 from db_table import db_table
 import sys
 
-# # Check if correct number of command-line arguments
-# n = len(sys.argv)
-# if n != 3:
-#     print("Must have 2 command-line argument denoting the column being matched and the value being matched.")
-#     sys.exit()
-
 column = sys.argv[1].lower()
 value = " "
 value = value.join(sys.argv[2:]).lower()

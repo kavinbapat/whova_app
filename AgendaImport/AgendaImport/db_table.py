@@ -113,13 +113,13 @@ class db_table:
             result_row = {columns[i]: row[i] for i in range(len(columns))}
             matched_rows.append(result_row)
 
-        # Find all sessions and their subsessions
+        # Get all rows to easily find subsessions of sessions
         all_rows_query = f"SELECT {columns_query_string} FROM {self.name}"
         all_rows = list(self.db_conn.execute(all_rows_query))
 
         sessions = {}
         last_session_id = None
-
+        # Find all sessions and their subsessions and add to sessions dict
         for row in all_rows:
             row_dict = {columns[i]: row[i] for i in range(len(columns))}
             if row_dict['session_type'] == 'session':
@@ -130,19 +130,20 @@ class db_table:
 
         result = []
 
-        # Add all matching sessions and their subsessions to final result
-        session_ids_to_include = set()
+        # Get all session ID's of matching sessions and their subsessions
+        session_ids = set()
         for matched_row in matched_rows:
             if matched_row['session_type'] == 'session':
                 session_id = matched_row['id']
-                session_ids_to_include.add(session_id)
+                session_ids.add(session_id)
             else:
                 for session_id, subsessions in sessions.items():
                     if matched_row in subsessions:
-                        session_ids_to_include.add(session_id)
+                        session_ids.add(session_id)
                         break
-            
-        for session_id in session_ids_to_include:
+        
+        # Add all matching sessions and their subsessions to final result
+        for session_id in session_ids:
             result.extend(sessions.get(session_id, []))
 
         return result
